@@ -35,6 +35,7 @@ type Order = {
   fulfillmentType: "pickup" | "delivery"
   paymentMethod: "cash" | "vietqr"
   paymentStatus: string
+  createdAt: string
   paymentQrCodeUrl?: string
   customerName?: string
   phone?: string

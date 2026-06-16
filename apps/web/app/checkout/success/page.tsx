@@ -22,6 +22,8 @@ const fulfillmentLabels = {
   delivery: "Giao hàng",
 }
 
+const vatRate = 0.1
+
 export const dynamic = "force-dynamic"
 
 export default async function CheckoutSuccessPage({
@@ -39,6 +41,13 @@ export default async function CheckoutSuccessPage({
   if (!order) {
     notFound()
   }
+
+  const vat = Math.round(order.totalPrice - order.totalPrice / (1 + vatRate))
+  const createdTime = new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(order.createdAt))
 
   return (
     <section className="grid gap-5 px-4 py-5">
@@ -102,7 +111,7 @@ export default async function CheckoutSuccessPage({
         address={order.address ?? fulfillmentLabels[order.fulfillmentType]}
         paymentLabel={paymentLabels[order.paymentMethod]}
         paymentQrCodeUrl={order.paymentQrCodeUrl}
-        pickupTime="Đang chuẩn bị"
+        createdTime={createdTime}
         items={order.items.map((item) => ({
           name: item.nameSnapshot,
           quantity: item.quantity,
@@ -112,6 +121,7 @@ export default async function CheckoutSuccessPage({
         subtotal={formatVnd(order.subtotal)}
         shipping={formatVnd(order.shippingFee)}
         discount={formatVnd(order.discount)}
+        vat={formatVnd(vat)}
         total={formatVnd(order.totalPrice)}
       />
 

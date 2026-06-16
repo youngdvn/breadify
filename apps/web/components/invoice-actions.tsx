@@ -19,11 +19,12 @@ type InvoiceActionsProps = {
   address: string
   paymentLabel: string
   paymentQrCodeUrl?: string
-  pickupTime: string
+  createdTime: string
   items: InvoiceItem[]
   subtotal: string
   shipping: string
   discount: string
+  vat: string
   total: string
 }
 
@@ -34,11 +35,12 @@ function buildInvoiceContent({
   address,
   paymentLabel,
   paymentQrCodeUrl,
-  pickupTime,
+  createdTime,
   items,
   subtotal,
   shipping,
   discount,
+  vat,
   total,
 }: InvoiceActionsProps) {
   return `<!doctype html>
@@ -67,30 +69,30 @@ function buildInvoiceContent({
     <div class="row"><span>Số điện thoại</span><strong>${escapeHtml(phone || "-")}</strong></div>
     <div class="row"><span>Địa chỉ</span><strong>${escapeHtml(address)}</strong></div>
     <div class="row"><span>Thanh toán</span><strong>${escapeHtml(paymentLabel)}</strong></div>
-    <div class="row"><span>Thời gian</span><strong>${escapeHtml(pickupTime)}</strong></div>
+    <div class="row"><span>Thời gian tạo</span><strong>${escapeHtml(createdTime)}</strong></div>
     <section class="items">
       ${items
-        .map(
-          (item) => `
+      .map(
+        (item) => `
         <div class="row">
           <span>${escapeHtml(item.name)} x${item.quantity}<br /><small class="muted">${escapeHtml(item.price)}/phần</small></span>
           <strong>${escapeHtml(item.total)}</strong>
         </div>`
-        )
-        .join("")}
+      )
+      .join("")}
     </section>
     <div class="row"><span>Tạm tính</span><span>${escapeHtml(subtotal)}</span></div>
     <div class="row"><span>Phí giao hàng</span><span>${escapeHtml(shipping)}</span></div>
     <div class="row"><span>Giảm giá</span><span>${escapeHtml(discount)}</span></div>
+    <div class="row"><span>VAT (đã bao gồm)</span><span>${escapeHtml(vat)}</span></div>
     <div class="row total"><span>Tổng cộng</span><span>${escapeHtml(total)}</span></div>
-    ${
-      paymentQrCodeUrl
-        ? `<section class="qr">
+    ${paymentQrCodeUrl
+      ? `<section class="qr">
       <p><strong>QR chuyển khoản</strong></p>
       <img src="${escapeAttribute(paymentQrCodeUrl)}" alt="QR chuyển khoản cho đơn ${escapeAttribute(orderId)}" />
       <p class="muted">Quét mã QR để chuyển khoản đúng số tiền.</p>
     </section>`
-        : ""
+      : ""
     }
   </main>
 </body>

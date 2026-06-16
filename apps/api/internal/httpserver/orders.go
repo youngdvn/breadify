@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"breadify/apps/api/internal/id"
 )
@@ -41,6 +42,7 @@ type orderResponse struct {
 	FulfillmentType  string              `json:"fulfillmentType"`
 	PaymentMethod    string              `json:"paymentMethod"`
 	PaymentStatus    string              `json:"paymentStatus"`
+	CreatedAt        time.Time           `json:"createdAt"`
 	CustomerName     *string             `json:"customerName,omitempty"`
 	Phone            *string             `json:"phone,omitempty"`
 	Address          *string             `json:"address,omitempty"`
@@ -277,6 +279,7 @@ func (server *Server) loadOrder(request *http.Request, orderID string) (orderRes
 				fulfillment_type::text,
 				payment_method::text,
 				payment_status::text,
+				created_at,
 				customer_name,
 				phone,
 				address,
@@ -295,6 +298,7 @@ func (server *Server) loadOrder(request *http.Request, orderID string) (orderRes
 		&order.FulfillmentType,
 		&order.PaymentMethod,
 		&order.PaymentStatus,
+		&order.CreatedAt,
 		&customerName,
 		&phone,
 		&address,
