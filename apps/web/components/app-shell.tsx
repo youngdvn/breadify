@@ -1,10 +1,20 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Toaster } from "sonner"
 
+import { AdminShell } from "@/components/admin-shell"
 import { StorefrontNav } from "@/components/storefront-nav"
 import { IconShoppingCart } from "@tabler/icons-react"
 
 function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
+  const pathname = usePathname()
+
+  if (pathname.startsWith("/admin")) {
+    return <AdminShell>{children}</AdminShell>
+  }
+
   return (
     <div className="flex h-dvh justify-center overflow-hidden bg-[linear-gradient(180deg,var(--muted),var(--background))] text-foreground sm:p-4">
       <div

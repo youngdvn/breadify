@@ -124,7 +124,10 @@ export default function Page() {
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <p className="font-semibold">{bread.price}</p>
-                  <AddToCartButton productName={bread.name} />
+                  <AddToCartButton
+                    productName={bread.name}
+                    productSlug={bread.id}
+                  />
                 </div>
               </div>
             </article>
