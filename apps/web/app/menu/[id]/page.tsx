@@ -2,8 +2,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { AddToCartButton } from "@/components/add-to-cart-button"
+import { getMenuItem, getMenuItems } from "@/lib/api/menu"
 import { Button } from "@workspace/ui/components/button"
-import { menuItems } from "@/lib/mock-data"
 import { Input } from "@workspace/ui/components/input"
 
 type ProductDetailPageProps = {
@@ -12,15 +12,11 @@ type ProductDetailPageProps = {
   }>
 }
 
-export function generateStaticParams() {
-  return menuItems.map((item) => ({
-    id: item.id,
-  }))
-}
+export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: ProductDetailPageProps) {
   const { id } = await params
-  const product = menuItems.find((item) => item.id === id)
+  const product = await getMenuItem(id)
 
   if (!product) {
     return {
@@ -38,14 +34,14 @@ export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
   const { id } = await params
-  const product = menuItems.find((item) => item.id === id)
+  const product = await getMenuItem(id)
 
   if (!product) {
     notFound()
   }
 
-  const relatedProducts = menuItems
-    .filter((item) => item.id !== product.id)
+  const relatedProducts = (await getMenuItems())
+    .filter((item) => item.slug !== product.slug)
     .slice(0, 3)
 
   return (
@@ -123,16 +119,12 @@ export default async function ProductDetailPage({
             defaultValue={1}
             inputMode="numeric"
             aria-label={`Số lượng ${product.name}`}
-            className="
-    h-8 w-14 text-center text-sm font-medium
-    [&::-webkit-inner-spin-button]:appearance-none
-    [&::-webkit-outer-spin-button]:appearance-none
-    [-moz-appearance:textfield]
-  "
+            className="h-8 w-14 text-center text-sm font-medium [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
           />
         </div>
         <AddToCartButton
           productName={product.name}
+          productSlug={product.slug}
           quantityInputId={`quantity-${product.id}`}
           size="default"
           label="Thêm vào giỏ"
@@ -151,7 +143,7 @@ export default async function ProductDetailPage({
           {relatedProducts.map((item) => (
             <Link
               key={item.id}
-              href={`/menu/${item.id}`}
+              href={`/menu/${item.slug}`}
               className="border-border/80 bg-card grid grid-cols-[3.5rem_1fr] gap-3 rounded-3xl border p-3 transition-colors hover:bg-muted/50"
             >
               <div className="bg-muted flex size-14 items-center justify-center rounded-2xl text-2xl">

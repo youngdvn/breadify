@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS cart_items;
+DROP TABLE IF EXISTS cart_sessions;
+
+ALTER TABLE orders
+    ALTER COLUMN customer_name SET NOT NULL,
+    ALTER COLUMN phone SET NOT NULL;
