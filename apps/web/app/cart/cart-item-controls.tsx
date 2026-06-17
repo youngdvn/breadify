@@ -4,7 +4,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { apiFetch } from "@/lib/api/client"
+import {
+  deleteCartItem,
+  updateCartItem,
+} from "@/services/cart-client-service"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -27,17 +30,10 @@ function CartItemControls({
   async function updateItem() {
     setIsSaving(true)
     try {
-      const response = await apiFetch(`/api/cart/items/${itemId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          quantity,
-          note,
-        }),
+      await updateCartItem(itemId, {
+        quantity,
+        note,
       })
-
-      if (!response.ok) {
-        throw new Error("Cannot update cart item")
-      }
 
       toast.success("Đã cập nhật giỏ hàng")
       router.refresh()
@@ -51,13 +47,7 @@ function CartItemControls({
   async function deleteItem() {
     setIsSaving(true)
     try {
-      const response = await apiFetch(`/api/cart/items/${itemId}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        throw new Error("Cannot delete cart item")
-      }
+      await deleteCartItem(itemId)
 
       toast.success("Đã xóa món khỏi giỏ")
       router.refresh()

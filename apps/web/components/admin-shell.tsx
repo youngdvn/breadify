@@ -13,7 +13,7 @@ import {
 } from "@tabler/icons-react"
 import { toast, Toaster } from "sonner"
 
-import { apiFetch } from "@/lib/api/client"
+import { logoutAdmin } from "@/services/admin-auth-service"
 import { cn } from "@workspace/ui/lib/utils"
 
 const adminNavItems = [
@@ -45,9 +45,7 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const isLoginPage = pathname === "/admin/login"
 
   async function logout() {
-    await apiFetch("/api/admin/auth/logout", {
-      method: "POST",
-    })
+    await logoutAdmin()
     toast.success("Đã đăng xuất")
     router.replace("/admin/login")
     router.refresh()

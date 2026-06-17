@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { AddToCartButton } from "@/components/add-to-cart-button"
-import { getMenuItem, getMenuItems } from "@/lib/api/menu"
+import { getMenuItem, getMenuItems } from "@/services/menu-service"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 

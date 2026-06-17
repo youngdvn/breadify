@@ -1,28 +1,14 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { InvoiceActions } from "@/components/invoice-actions"
-import { getOrder } from "@/lib/api/cart"
-import { formatVnd } from "@/lib/format"
-import { Button } from "@workspace/ui/components/button"
+import { OrderDetailView } from "@/components/order-detail-view"
+import { fulfillmentLabels } from "@/constants/order"
+import { getOrder } from "@/services/order-service"
 
 type CheckoutSuccessPageProps = {
   searchParams: Promise<{
     orderId?: string | string[]
   }>
 }
-
-const paymentLabels = {
-  cash: "Tiền mặt",
-  vietqr: "Chuyển khoản",
-}
-
-const fulfillmentLabels = {
-  pickup: "Nhận tại quầy",
-  delivery: "Giao hàng",
-}
-
-const vatRate = 0.1
 
 export const dynamic = "force-dynamic"
 
@@ -42,13 +28,6 @@ export default async function CheckoutSuccessPage({
     notFound()
   }
 
-  const vat = Math.round(order.totalPrice - order.totalPrice / (1 + vatRate))
-  const createdTime = new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "Asia/Ho_Chi_Minh",
-  }).format(new Date(order.createdAt))
-
   return (
     <section className="grid gap-5 px-4 py-5">
       <div className="bg-primary/10 grid justify-items-center rounded-[2rem] p-6 text-center">
@@ -67,67 +46,11 @@ export default async function CheckoutSuccessPage({
         </p>
       </div>
 
-      <div className="border-border/80 bg-card rounded-3xl border p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Hóa đơn online</h2>
-          <span className="text-primary text-sm font-semibold">
-            {formatVnd(order.totalPrice)}
-          </span>
-        </div>
-        <div className="mt-4 grid gap-2 text-sm">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex justify-between gap-3">
-              <span className="text-muted-foreground">
-                {item.nameSnapshot} x{item.quantity}
-              </span>
-              <span className="font-medium">{formatVnd(item.lineTotal)}</span>
-            </div>
-          ))}
-        </div>
-        <div className="border-border mt-4 grid gap-2 border-t pt-4 text-sm">
-          <div className="flex justify-between">
-            <span>Khách hàng</span>
-            <span className="font-medium">
-              {order.customerName ?? "Khách nhận tại quầy"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Thanh toán</span>
-            <span className="font-medium">
-              {paymentLabels[order.paymentMethod]}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Phí giao hàng</span>
-            <span className="font-medium">{formatVnd(order.shippingFee)}</span>
-          </div>
-        </div>
-      </div>
-
-      <InvoiceActions
-        orderId={order.shortId}
-        customerName={order.customerName ?? "Khách nhận tại quầy"}
-        phone={order.phone ?? ""}
-        address={order.address ?? fulfillmentLabels[order.fulfillmentType]}
-        paymentLabel={paymentLabels[order.paymentMethod]}
-        paymentQrCodeUrl={order.paymentQrCodeUrl}
-        createdTime={createdTime}
-        items={order.items.map((item) => ({
-          name: item.nameSnapshot,
-          quantity: item.quantity,
-          price: formatVnd(item.unitPrice),
-          total: formatVnd(item.lineTotal),
-        }))}
-        subtotal={formatVnd(order.subtotal)}
-        shipping={formatVnd(order.shippingFee)}
-        discount={formatVnd(order.discount)}
-        vat={formatVnd(vat)}
-        total={formatVnd(order.totalPrice)}
+      <OrderDetailView
+        order={order}
+        secondaryHref={`/orders/${order.id}`}
+        secondaryLabel="Xem chi tiết đơn hàng"
       />
-
-      <Button asChild variant="ghost">
-        <Link href="/">Về trang chủ</Link>
-      </Button>
     </section>
   )
 }

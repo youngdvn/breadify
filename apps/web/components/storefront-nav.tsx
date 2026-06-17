@@ -27,11 +27,11 @@ const navItems = [
     href: "/orders",
     Icon: IconReceipt2,
   },
-  {
-    label: "Tài khoản",
-    href: "/account",
-    Icon: IconUserCircle,
-  },
+  // {
+  //   label: "Tài khoản",
+  //   href: "/account",
+  //   Icon: IconUserCircle,
+  // },
 ]
 
 function StorefrontNav() {
@@ -40,7 +40,7 @@ function StorefrontNav() {
   return (
     <nav
       aria-label="Storefront navigation"
-      className="bg-background/95 supports-[backdrop-filter]:bg-background/80 grid shrink-0 grid-cols-4 gap-1 border-t p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
+      className="bg-background/95 supports-backdrop-filter:bg-background/80 grid shrink-0 grid-cols-3 gap-1 border-t p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur"
     >
       {navItems.map(({ label, href, Icon }) => {
         const isActive = href === "/" ? pathname === href : pathname.startsWith(href)

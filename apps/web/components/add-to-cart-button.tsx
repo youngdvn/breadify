@@ -3,7 +3,7 @@
 import { toast } from "sonner"
 import { useState, type ComponentProps } from "react"
 
-import { apiFetch } from "@/lib/api/client"
+import { addCartItem } from "@/services/cart-client-service"
 import { Button } from "@workspace/ui/components/button"
 
 type AddToCartButtonProps = {
@@ -30,17 +30,10 @@ function AddToCartButton({
 
     setIsAdding(true)
     try {
-      const response = await apiFetch("/api/cart/items", {
-        method: "POST",
-        body: JSON.stringify({
-          slug: productSlug,
-          quantity,
-        }),
+      await addCartItem({
+        slug: productSlug,
+        quantity,
       })
-
-      if (!response.ok) {
-        throw new Error("Cannot add item")
-      }
 
       toast.success("Đã thêm vào giỏ hàng", {
         description: `${quantity} x ${productName}`,
