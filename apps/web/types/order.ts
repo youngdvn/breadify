@@ -1,5 +1,7 @@
 type FulfillmentType = "pickup" | "delivery"
 type PaymentMethod = "cash" | "vietqr"
+type OrderStatus = "pending" | "in_progress" | "done" | "cancelled"
+type PaymentStatus = "unpaid" | "pending" | "paid" | "failed" | "refunded"
 
 type OrderItem = {
   id: string
@@ -14,10 +16,10 @@ type OrderItem = {
 type Order = {
   id: string
   shortId: string
-  status: string
+  status: OrderStatus
   fulfillmentType: FulfillmentType
   paymentMethod: PaymentMethod
-  paymentStatus: string
+  paymentStatus: PaymentStatus
   createdAt?: string
   paymentQrCodeUrl?: string
   customerName?: string
@@ -45,5 +47,7 @@ export type {
   FulfillmentType,
   Order,
   OrderItem,
+  OrderStatus,
   PaymentMethod,
+  PaymentStatus,
 }

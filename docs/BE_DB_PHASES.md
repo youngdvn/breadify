@@ -1,258 +1,304 @@
 # Breadify BE/DB Implementation Phases
 
-Tài liệu này chuyển nội dung trong `ANALYSIS.md` thành kế hoạch triển khai backend và database cho repo hiện tại.
+Tài liệu này là roadmap backend/database cho mục tiêu hiện tại của Breadify: hoàn thiện MVP vận hành cửa hàng, trong đó khách đặt món qua web/PWA, admin nhận và xử lý đơn trên màn hình tablet/desktop, hóa đơn có QR chuyển khoản, sau đó mở rộng sang quản lý menu, in bill, thống kê và deploy production.
 
-## 1. Phân Tích Nhiệm Vụ
+## 1. Mục Tiêu Hiện Tại
 
-### Mục Tiêu Backend
+### Mục Tiêu Sản Phẩm
 
-- Thay mock data hiện tại bằng dữ liệu PostgreSQL thật.
-- Cung cấp API cho customer app: menu, giỏ hàng/đặt đơn, checkout success, chi tiết đơn.
-- Cung cấp API cho admin sau này: CRUD menu, quản lý đơn, thống kê, QR cửa hàng, in lại bill.
-- Hỗ trợ real-time đơn mới bằng SSE cho admin.
-- Hỗ trợ thanh toán theo nghiệp vụ hiện tại: tiền mặt hoặc chuyển khoản VietQR; không tích hợp payment gateway/webhook ở MVP.
-- Chuẩn bị tích hợp máy in nhiệt LAN TCP nhưng không để lỗi in làm fail đơn hàng.
+- Customer app đọc menu thật, dùng cart backend session và tạo order thật.
+- Checkout hỗ trợ cả `pickup` và `delivery`.
+- Thanh toán MVP chỉ gồm `cash` và `vietqr`; chưa tích hợp payment gateway/webhook.
+- Admin đăng nhập bằng username + OTP email, không dùng mật khẩu.
+- Admin phải xem được đơn mới, đổi trạng thái đơn và thao tác vận hành tại quầy.
+- Hóa đơn online dùng order thật, có QR VietQR khi đơn chọn chuyển khoản.
+- Sau khi admin orders ổn định mới triển khai CRUD menu, in nhiệt LAN TCP, thống kê và hardening.
 
-### Phạm Vi Database
+### Phạm Vi Kỹ Thuật
 
-- PostgreSQL 16.
+- `apps/web`: Next.js 16 App Router, React 19, PWA storefront và admin UI.
+- `apps/api`: Go HTTP API, sở hữu business logic, DB access, migrations và seed.
+- PostgreSQL 16, SQL migrations, không dùng Prisma/ORM.
+- UUID v7 sinh ở Go app layer, không phụ thuộc PostgreSQL extension.
+- Shared UI nằm ở `packages/ui`.
+- Web gọi Go API qua `NEXT_PUBLIC_API_URL`; API giới hạn CORS bằng `WEB_ORIGIN`.
+
+## 2. Trạng Thái Repo Hiện Tại
+
+### Đã Có
+
 - Go API trong `apps/api`.
-- SQL migrations, không dùng Prisma/ORM.
-- UUID v7 sinh ở Go app layer, không dùng PostgreSQL extension.
-- Dữ liệu lõi giai đoạn đầu:
-  - Menu item.
-  - Order.
-  - Order item.
-  - Customer info snapshot trên order.
-  - Payment method/status.
-  - Admin account từ `.env`, chưa cần bảng user.
+- PostgreSQL schema cho `menu_items`, `orders`, `order_items`, `cart_sessions`, `cart_items`.
+- Migration runner, seed runner và seed menu ban đầu.
+- Health/readiness endpoints.
+- Customer menu API: `GET /api/menu`, `GET /api/menu/{slug}`.
+- Backend cart session bằng HttpOnly cookie.
+- Cart API: get/add/update/delete/clear.
+- Order API: tạo order từ cart, tính lại giá từ DB, lưu order transaction, clear cart sau khi tạo.
+- Order detail API: `GET /api/orders/{id}`.
+- VietQR URL được build từ cấu hình ngân hàng và trả theo order khi payment method là `vietqr`.
+- Web menu/product detail/cart/checkout/success/order detail đã dùng API thật.
+- Invoice online dùng order thật.
+- Admin auth API bằng OTP email và signed HttpOnly session cookie.
+- Admin login UI, admin shell, admin home và route admin placeholder.
+- PWA manifest, app icons, service worker và offline page.
 
-### Điều Chỉnh Theo Repo Hiện Tại
+### Chưa Có
 
-- Repo đang dùng `pnpm`, không dùng Yarn v3 như `ANALYSIS.md`.
-- Frontend nằm ở `apps/web/app`, không phải `src/app`.
-- Backend nằm ở `apps/api`, cùng cấp với `apps/web`, viết bằng Go.
-- Shared UI nằm trong `packages/ui`.
-- Customer UI/PWA đã có sẵn mock data; BE cần đi theo hướng thay mock bằng API từng bước, không viết lại toàn bộ UI.
-- Admin chưa triển khai; BE cần thiết kế để admin dùng lại sau.
+- Admin orders API thật.
+- Admin orders UI thật, hiện vẫn dùng mock data.
+- Admin menu API/CRUD thật.
+- Admin menu UI thật, hiện vẫn dùng mock data.
+- SSE realtime cho đơn mới.
+- API cập nhật order status/payment status.
+- In bill LAN TCP và API in lại bill.
+- Upload ảnh món.
+- Stats API/dashboard thật.
+- Production config, deploy checklist và test browser end-to-end.
 
-## 2. Tài Liệu/Cấu Hình Cần Có
+### Cần Lưu Ý
 
-### Bắt Buộc Trước Khi Code BE
+- `apps/web/app/page.tsx` vẫn dùng một số mock data cho home/favorites/deals; menu và checkout flow chính đã dùng API thật.
+- API hiện chưa có endpoint riêng `GET /api/payment/qr`; QR thanh toán nằm trong order response.
+- Admin account hiện lấy từ `.env`; chưa có bảng users/roles.
+- Category hiện là enum DB `banh_mi`, `do_uong`; CRUD category chưa nằm trong schema.
 
-- Thông tin database local/dev:
-  - `DATABASE_URL`.
-  - user/password/db name cho PostgreSQL.
-- Thông tin cửa hàng:
-  - `NEXT_PUBLIC_STORE_NAME`.
-  - `NEXT_PUBLIC_STORE_PHONE`.
-  - `NEXT_PUBLIC_STORE_ADDRESS`.
-- Thông tin thanh toán:
-  - `STORE_BANK_ID`.
-  - `STORE_BANK_ACCOUNT`.
-  - `STORE_BANK_OWNER`.
-  - Xác nhận dùng tiền mặt và chuyển khoản VietQR.
-- Quy tắc đơn hàng:
-  - Cho phép đặt hàng khi hết món hay không.
-  - Trạng thái đơn cần dùng: `Pending`, `InProgress`, `Done`, `Cancelled` có cần `Cancelled` không.
-  - Địa chỉ giao hàng là bắt buộc hay chỉ pickup tại quầy. — Đã chốt: hỗ trợ cả pickup và giao hàng.
-- Seed menu ban đầu:
-  - Tên món.
-  - Nhóm món.
-  - Giá.
-  - Mô tả.
-  - Ảnh.
-  - Trạng thái còn/hết.
+## 3. Quyết Định Đã Chốt
 
-### Cần Cho Phase Admin/Deploy
+- Runtime chính: Next.js cho web, Go cho API, PostgreSQL cho DB.
+- Backend chính không đặt trong Next.js route handlers.
+- Payment production MVP chỉ dùng `cash` và `vietqr`.
+- Order status gồm `pending`, `in_progress`, `done`, `cancelled`.
+- Fulfillment type gồm `pickup`, `delivery`.
+- Đơn `delivery` bắt buộc tên, SĐT và địa chỉ.
+- Đơn `pickup` không bắt buộc tên/SĐT/địa chỉ.
+- Phí giao hàng cố định `20.000đ` cho mỗi đơn `delivery`.
+- Cart dùng backend session qua HttpOnly cookie.
+- Admin login dùng username + OTP email, OTP thay thế mật khẩu.
+- Nếu chưa cấu hình SMTP, OTP được log ra terminal API trong môi trường dev.
+- `OrderItem` lưu snapshot tên/giá để hóa đơn không đổi khi menu thay đổi.
+- Không xóa hard menu item đã có order nếu chưa có quyết định rõ; ưu tiên tắt `available`.
 
-- Admin username, admin email, session secret và SMTP config để gửi OTP.
-- Domain production + HTTPS.
-- IP máy in nhiệt và port TCP.
-- Máy chủ deploy, registry, CI/CD variables nếu dùng GitLab.
-- Chính sách lưu ảnh upload: local volume hay cloud storage.
+## 4. Câu Hỏi Còn Mở
 
-## 3. Câu Hỏi Cần Xác Nhận
+1. Admin production dùng 1 tài khoản `.env` hay cần nhiều nhân viên/role?
+2. Category giữ cố định bằng enum DB hay cần CRUD category?
+3. Ảnh món dùng local `/uploads` hay object storage?
+4. Thông tin cửa hàng production cuối cùng là gì?
+5. Thông tin ngân hàng/VietQR production cuối cùng là gì?
+6. Môi trường deploy có hỗ trợ SSE/long-lived connection không?
+7. Máy in nhiệt sẽ kết nối LAN TCP với IP/port nào?
+8. Hóa đơn cần thêm bản PDF, text thermal bill hay chỉ HTML online ở MVP?
 
-1. App này ưu tiên bán tại quầy pickup, giao hàng nội bộ, hay cả hai? — Đã chốt: hỗ trợ cả hai.
-2. Thanh toán QR cuối cùng là MoMo, VietQR ngân hàng, hay cho chọn cả hai? — Đã chốt mới: chỉ tiền mặt và chuyển khoản VietQR.
-3. Đơn hàng có cần trạng thái `Cancelled` không? — Đã chốt: có `Cancelled`.
-4. Admin login dùng 1 tài khoản `.env` như `ANALYSIS.md`, hay cần nhiều nhân viên về sau?
-5. Menu cần nhóm cố định `Bánh mì` / `Đồ uống`, hay có thể CRUD category?
-6. Ảnh món giai đoạn đầu lưu local `/uploads` có đủ chưa?
-7. Máy in nhiệt sẽ test trong LAN thật ở phase nào?
-8. Hóa đơn online cần xuất `.txt`, PDF, hay lưu bản ghi invoice trong DB?
+## 5. API Surface
 
-### Quyết Định Đã Chốt
+### Customer Đã Có
 
-- Payment production chỉ có `cash` và `vietqr`; `vietqr` hiển thị QR trong hóa đơn online khi xuất bill.
-- Order status sẽ có `Cancelled`.
-- Fulfillment sẽ hỗ trợ cả `pickup` và `delivery`.
-- `Cancelled` là trạng thái kết thúc, admin có thể chuyển đơn sang trạng thái này khi khách hủy hoặc quán không thể phục vụ.
-- VietQR được generate từ `STORE_BANK_ID`, `STORE_BANK_ACCOUNT`, `STORE_BANK_OWNER`, số tiền đơn hàng và short order id.
-- Phí giao hàng cố định `20.000đ` cho mỗi đơn `delivery`; đơn `pickup` không tính phí giao hàng.
-- Cart lưu bằng backend session qua HttpOnly cookie, không dùng localStorage cho dữ liệu cart chính.
-- Checkout `delivery` bắt buộc tên, SĐT và địa chỉ; checkout `pickup` không bắt buộc tên/SĐT/địa chỉ.
-- Admin login dùng username + OTP gửi email, OTP thay thế hoàn toàn mật khẩu.
+- `GET /healthz`
+- `GET /readyz`
+- `GET /api/menu`
+- `GET /api/menu?category=banh_mi`
+- `GET /api/menu/{slug}`
+- `GET /api/cart`
+- `POST /api/cart/items`
+- `PATCH /api/cart/items/{id}`
+- `DELETE /api/cart/items/{id}`
+- `DELETE /api/cart`
+- `POST /api/orders`
+- `GET /api/orders/{id}`
 
-## 4. Kiến Trúc Đề Xuất
+### Admin Auth Đã Có
 
-### Runtime
+- `POST /api/admin/auth/otp/request`
+- `POST /api/admin/auth/otp/verify`
+- `POST /api/admin/auth/logout`
+- `GET /api/admin/auth/me`
 
-- `apps/web`: Next.js PWA/customer UI, không sở hữu DB.
-- `apps/api`: Go HTTP API, sở hữu business logic, DB access, migrations, seed.
-- PostgreSQL chạy qua `docker-compose.yml` ở root.
-- SQL migrations trong `apps/api/migrations`.
-- Seed SQL trong `apps/api/seeds`.
-- Web gọi Go API qua `NEXT_PUBLIC_API_URL`.
+### Admin Nên Làm Tiếp Theo
 
-### API Customer
-
-- `GET /api/menu`: lấy danh sách món còn/hết, filter category.
-- `GET /api/menu/{slug}`: lấy chi tiết món.
-- `POST /api/orders`: tạo đơn từ cart.
-- `GET /api/orders/[id]`: lấy chi tiết đơn để success/track.
-- `GET /api/payment/qr`: trả metadata QR theo order và payment method nếu cần.
-
-### API Admin
-
+- `GET /api/admin/orders`: danh sách đơn, filter theo status/date/payment.
+- `GET /api/admin/orders/{id}`: chi tiết đơn cho admin.
+- `PATCH /api/admin/orders/{id}/status`: đổi `pending -> in_progress -> done/cancelled`.
+- `PATCH /api/admin/orders/{id}/payment-status`: đánh dấu payment nếu cần.
+- `GET /api/admin/orders/stream`: SSE báo đơn mới/trạng thái thay đổi.
+- `GET /api/admin/menu`: danh sách menu cho admin, gồm cả món tạm hết.
 - `POST /api/admin/menu`: tạo món.
-- `PUT /api/admin/menu/[id]`: sửa món/toggle available.
-- `DELETE /api/admin/menu/[id]`: xóa mềm hoặc xóa thật tùy xác nhận.
-- `GET /api/admin/orders`: danh sách đơn.
-- `PUT /api/admin/orders/[id]`: cập nhật trạng thái.
-- `GET /api/admin/orders/stream`: SSE đơn mới.
-- `POST /api/admin/print/[id]`: in lại bill.
-- `GET /api/admin/stats`: thống kê ngày.
+- `PATCH /api/admin/menu/{id}`: sửa món.
+- `PATCH /api/admin/menu/{id}/availability`: bật/tắt món.
+- `DELETE /api/admin/menu/{id}`: xóa mềm hoặc hard-delete nếu chưa có order.
+- `POST /api/admin/print/{id}`: in lại bill.
+- `GET /api/admin/stats/today`: thống kê vận hành ngày hiện tại.
 
-### Database Models Tối Thiểu
+## 6. Data Model Hiện Tại
 
 - `menu_items`
   - `id`, `name`, `slug`, `category`, `price`, `image_url`, `description`, `detail`, `available`, `sort_order`, timestamps.
 - `orders`
   - `id`, `status`, `fulfillment_type`, `payment_method`, `payment_status`, `customer_name`, `phone`, `address`, `note`, `subtotal`, `shipping_fee`, `discount`, `total_price`, timestamps.
 - `order_items`
-  - `id`, `order_id`, `menu_item_id`, `name_snapshot`, `unit_price`, `quantity`, `note`, `line_total`.
+  - `id`, `order_id`, `menu_item_id`, `name_snapshot`, `unit_price`, `quantity`, `note`, `line_total`, `created_at`.
 - `cart_sessions`
   - `id`, `created_at`, `updated_at`, `expires_at`.
 - `cart_items`
   - `id`, `cart_session_id`, `menu_item_id`, `quantity`, `note`, timestamps.
 
-### Nguyên Tắc Dữ Liệu
+## 7. Phase Triển Khai
 
-- Giá trị tiền lưu bằng `Int` VND, không lưu string `32.000đ`.
-- `OrderItem` lưu snapshot tên/giá để hóa đơn không bị đổi khi admin sửa menu.
-- Không xóa hard menu item đã có order nếu chưa xác nhận; ưu tiên `Available=false`.
-- API validate input bằng schema rõ ràng trước khi ghi DB.
-- Tạo order và order items trong transaction.
+### Phase 0 — Quyết Định Và Chuẩn Bị
 
-## 5. Phase Triển Khai
+Trạng thái: hoàn thành phần quyết định nền tảng, còn vài câu hỏi production.
 
-### Phase 0 — Chốt Quyết Định Và Chuẩn Bị
-
-- Chốt câu hỏi nghiệp vụ ở mục 3.
-- Chốt dùng PostgreSQL local bằng Docker Compose.
-- Chốt payment method trên UI/API: `cash`, `vietqr`; VietQR là QR production cần triển khai.
-- Chốt order status: `pending`, `in_progress`, `done`, `cancelled`.
-- Chốt fulfillment type: `pickup`, `delivery`.
-- Chốt backend Go đặt tại `apps/api`, tách khỏi `apps/web`.
-- Cập nhật `.env.example`.
+- Chốt runtime Next.js + Go + PostgreSQL.
+- Chốt payment MVP `cash` và `vietqr`.
+- Chốt fulfillment `pickup` và `delivery`.
+- Chốt order status có `cancelled`.
+- Chốt cart backend session.
+- Chốt admin auth bằng OTP email.
+- Cập nhật `.env.example` cho web/API.
+- Còn mở: multi-admin, category CRUD, upload storage, deploy/SSE, thông tin production.
 
 ### Phase 1 — Go API Và Database Foundation
 
-- Tạo Go module trong `apps/api`.
-- Cài PostgreSQL driver `pgx`.
-- Tạo SQL migration đầu tiên.
-- Enum DB ban đầu có `cash`, `momo`, `vietqr`; API/UI chỉ cho phép `cash`, `vietqr` từ flow mới.
-- Tạo DB connection pool.
-- Tạo UUID v7 helper ở Go app layer.
-- Tạo migration runner đơn giản.
-- Tạo seed menu.
-- Tạo API skeleton và health checks.
+Trạng thái: đã triển khai.
 
-### Phase 2 — Customer Read APIs
+- Go module `apps/api`.
+- PostgreSQL driver `pgx`.
+- SQL migrations.
+- DB connection pool.
+- UUID v7 và short id helper.
+- Migration runner và seed runner.
+- Seed menu ban đầu.
+- Docker Compose PostgreSQL 16.
+- Health/readiness endpoints.
 
-- Implement `GET /api/menu`.
-- Implement `GET /api/menu/{slug}`.
-- Chuẩn hóa DTO trả về cho UI hiện tại.
-- Thay `mock-data.ts` ở menu/product detail bằng API fetch từng bước.
-- `apps/web` chỉ giữ public env như `NEXT_PUBLIC_API_URL`; DB/payment/admin secret nằm ở `apps/api`.
+### Phase 2 — Customer Menu APIs
 
-### Phase 3 — Order APIs
+Trạng thái: đã triển khai luồng chính.
 
-- Implement `POST /api/orders`.
-- Validate cart items, quantity, note, customer info, payment method (`cash` hoặc `vietqr`).
-- Validate fulfillment type; nếu `delivery` thì tên, SĐT và địa chỉ bắt buộc, nếu `pickup` thì các thông tin này có thể rỗng.
-- Recalculate price từ DB, không tin total từ client.
-- Nếu `delivery`, áp dụng phí giao hàng cố định `20.000đ`; nếu `pickup`, phí giao hàng là `0đ`.
-- Tạo order transaction.
-- Implement `GET /api/orders/[id]`.
-- Success page đọc order thật.
+- `GET /api/menu`.
+- `GET /api/menu/{slug}`.
+- Validate query category.
+- DTO/mapper menu cho web.
+- Menu page và product detail đọc API thật.
+- Web env chỉ giữ public frontend env.
+- Còn nên làm: fallback/loading/error UI tốt hơn khi API lỗi.
 
-### Phase 4 — Cart/Checkout Integration
+### Phase 3 — Cart Và Order APIs
 
-- Tạo cart client gọi backend session cart.
-- Cart page dùng cart thật thay mock.
-- Checkout submit gọi `POST /api/orders`.
-- Checkout cho chọn `Nhận tại quầy` hoặc `Giao hàng`.
-- Checkout chỉ bắt buộc địa chỉ khi chọn `Giao hàng`.
-- Redirect sang success theo order id.
-- Invoice export dùng order thật.
+Trạng thái: đã triển khai luồng chính.
 
-### Phase 5 — Admin Auth Foundation
+- Backend cart session bằng HttpOnly cookie.
+- Cart CRUD API.
+- `POST /api/orders` tạo order từ cart.
+- Validate fulfillment/payment/customer info.
+- Recalculate giá từ DB.
+- Chặn món hết hàng.
+- Áp dụng shipping fee cho delivery.
+- Lưu order/order items bằng transaction.
+- Clear cart sau khi tạo order.
+- `GET /api/orders/{id}`.
+- VietQR URL trong order response.
 
-- Cấu hình admin auth ở Go API bằng username + OTP email + HttpOnly signed session cookie.
-- Admin username/email từ `.env`; OTP gửi qua SMTP nếu cấu hình, nếu chưa cấu hình thì log ra terminal dev.
-- Web admin gọi Go API với auth token/session.
-- Tạo route request OTP, verify OTP, logout, me theo strategy Go API session.
+### Phase 4 — Customer Checkout Integration
 
-### Phase 6 — Admin Menu
+Trạng thái: đã triển khai luồng chính.
 
-- CRUD menu.
-- Toggle còn/hết.
-- Upload ảnh local `/uploads`.
-- Serve ảnh qua API hoặc static route.
+- Add-to-cart từ menu/home ghi vào backend cart.
+- Cart page đọc/sửa/xóa item từ backend cart.
+- Checkout chọn pickup/delivery.
+- Checkout chọn cash/vietqr.
+- Checkout submit tạo order thật.
+- Success page fetch order thật.
+- Order detail route thật.
+- Recent orders lưu local trên thiết bị.
+- Invoice export dùng order thật và hiển thị QR VietQR khi phù hợp.
+- Còn nên làm: browser test tạo đơn, checkout success, invoice export.
 
-### Phase 7 — Admin Orders Và SSE
+### Phase 5 — Admin Auth Và Admin Shell
 
-- Danh sách đơn.
-- Cập nhật trạng thái hai chiều.
-- SSE stream cho đơn mới.
-- Beep khi có đơn mới.
-- Chuẩn bị hook in bill tự động.
+Trạng thái: đã triển khai nền tảng, cần browser test.
 
-### Phase 8 — Printing Và Payment QR
+- Admin OTP request/verify/logout/me API.
+- Signed HttpOnly admin session cookie.
+- SMTP STARTTLS/implicit TLS.
+- Dev fallback log OTP ra terminal.
+- Admin login page hai bước.
+- Admin home kiểm tra session và redirect nếu chưa đăng nhập.
+- Admin shell riêng cho tablet/desktop.
+- Placeholder pages cho orders/menu/QR.
+- Còn nên làm: test login/logout trong browser với API thật.
 
-- Tạo service build nội dung bill.
-- Tạo helper build VietQR URL từ bank id, account, amount và short order id.
-- Tạo QR payment theo method đã chốt; VietQR dùng cho production và chỉ hiển thị trong hóa đơn online khi xuất bill.
-- Tích hợp printer LAN TCP bằng safe wrapper.
-- API in lại bill.
-- Test thực tế với máy in.
+### Phase 6 — Admin Orders MVP
 
-### Phase 9 — Stats, QR Cửa Hàng, Hardening
+Trạng thái: đã triển khai phần cốt lõi, còn thiếu date filter/payment-status và browser test.
 
-- API thống kê theo ngày.
-- Admin QR trỏ tới `/menu`.
-- Rate limit cơ bản cho order API nếu cần.
-- Logging lỗi DB/printer.
-- Build production và kiểm tra Docker.
+- Đã tạo admin auth helper dùng lại `verifyAdminRequest`.
+- Đã tạo `GET /api/admin/orders` với status filter và limit.
+- Đã tạo `GET /api/admin/orders/{id}`.
+- Đã tạo `PATCH /api/admin/orders/{id}/status`.
+- Đã validate transition `pending -> in_progress/cancelled`, `in_progress -> done/cancelled`, terminal status không đổi tiếp.
+- Đã thay admin orders page dùng API thật và bỏ mock data.
+- Đã hiển thị trạng thái, payment, fulfillment, customer info, items và tổng tiền.
+- Đã thêm action nhận đơn/hoàn tất/hủy và refresh thủ công.
+- Còn nên làm: date/range filter, `PATCH /api/admin/orders/{id}/payment-status` nếu cần, browser test flow customer tạo đơn -> admin thấy đơn -> admin đổi trạng thái.
 
-## 6. Rủi Ro Kỹ Thuật
+### Phase 7 — Realtime Và Vận Hành Đơn
 
-- Next.js 16 chỉ áp dụng cho frontend; trước khi sửa UI/routes trong `apps/web` vẫn cần đọc docs trong `node_modules/next/dist/docs`.
-- Go API tách riêng nên không dùng Next.js API routes làm backend chính.
-- Printer LAN không test được nếu không có thiết bị và cùng mạng.
-- Payment QR production dùng VietQR thật theo thông tin ngân hàng đã xác nhận.
-- Nếu dùng local upload, deploy phải mount volume để không mất ảnh.
-- SSE trên serverless có thể không ổn định; cần deploy runtime hỗ trợ long-lived connection.
+Trạng thái: sau Phase 6.
 
-## 7. Definition Of Done Cho BE/DB MVP
+- Tạo SSE endpoint `GET /api/admin/orders/stream`.
+- Broadcast order mới sau khi `POST /api/orders` commit thành công.
+- Broadcast status change sau khi admin cập nhật đơn.
+- Admin UI nhận SSE và refresh/append đơn mới.
+- Thêm âm báo/tín hiệu trực quan khi có đơn mới.
+- Thêm nút refresh thủ công làm fallback khi SSE lỗi.
+- Đánh giá môi trường deploy có hỗ trợ long-lived connection.
 
-- Menu đọc từ PostgreSQL thông qua Go API.
-- Tạo đơn từ checkout qua Go API và lưu DB bằng transaction.
-- Success page hiển thị order thật từ Go API.
-- Hóa đơn online xuất từ order thật.
-- Admin có thể xem đơn mới và đổi trạng thái.
-- Seed chạy lại được trên môi trường mới.
-- `lint`, `typecheck`, `build` pass.
+### Phase 8 — Admin Menu
+
+Trạng thái: sau admin orders/realtime.
+
+- Tạo admin menu list API gồm cả món unavailable.
+- Tạo create/update menu item API.
+- Tạo toggle availability API.
+- Quyết định soft-delete/hard-delete menu item.
+- Tạo upload ảnh và serve ảnh nếu chọn local upload.
+- Admin menu page dùng API thật, bỏ mock data.
+- Đảm bảo customer menu chỉ hiển thị đúng trạng thái bán/hết.
+
+### Phase 9 — Printing, Stats, QR Và Hardening
+
+Trạng thái: sau MVP vận hành đơn.
+
+- Tạo service build bill content dùng chung cho online invoice và thermal printer.
+- Tạo printer service LAN TCP với safe wrapper.
+- Không để lỗi in làm fail order đã tạo.
+- Tạo API in lại bill.
+- Test với máy in thật trong LAN.
+- Tạo stats API cho doanh thu ngày, số đơn, top món.
+- Admin QR trỏ domain production.
+- Logging lỗi DB/API/printer.
+- Production build và deploy checklist.
+- Kiểm tra PWA sau khi dùng API thật.
+
+## 8. Rủi Ro Kỹ Thuật
+
+- Next.js 16 có thay đổi API/convention; trước khi sửa frontend route/UI trong `apps/web`, đọc guide liên quan trong `node_modules/next/dist/docs/`.
+- Go API tách riêng nên CORS/cookie credential phải cấu hình đúng giữa web và API.
+- Admin OTP đang lưu memory; restart API sẽ mất OTP đang pending. Chấp nhận cho MVP, nhưng nếu cần scale nhiều instance phải chuyển sang DB/Redis.
+- SSE có thể không phù hợp serverless hoặc proxy timeout thấp.
+- Printer LAN TCP không test được nếu không có thiết bị và cùng mạng.
+- Local upload cần volume khi deploy để không mất ảnh.
+- VietQR production phụ thuộc thông tin ngân hàng chính xác.
+
+## 9. Definition Of Done Cho MVP Vận Hành
+
+- Customer xem menu, thêm cart, checkout và tạo order thật thành công.
+- Admin đăng nhập OTP thành công.
+- Admin xem được danh sách đơn thật.
+- Admin đổi được trạng thái đơn thật.
+- Admin nhận được đơn mới realtime hoặc fallback refresh rõ ràng.
+- Hóa đơn online dùng order thật và QR VietQR đúng thông tin.
+- Seed chạy được trên DB sạch.
+- `go test ./...`, `pnpm --filter web lint`, `pnpm --filter web typecheck`, `pnpm --filter web build` pass.
+- Browser test tối thiểu qua flow customer order -> admin processing -> done.

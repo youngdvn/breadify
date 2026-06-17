@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react"
 import { toast, Toaster } from "sonner"
 
+import { ThemeToggle } from "@/components/theme-toggle"
 import { logoutAdmin } from "@/services/admin-auth-service"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -53,21 +54,24 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
 
   if (isLoginPage) {
     return (
-      <div className="bg-muted/40 flex h-dvh overflow-hidden text-foreground">
+      <div className="flex h-dvh overflow-hidden bg-muted/40 text-foreground">
         <main className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-10">
           <div className="w-full max-w-md">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="bg-primary text-primary-foreground flex size-11 items-center justify-center rounded-2xl text-sm font-semibold">
-                B
-              </span>
-              <div>
-                <p className="font-semibold">Breadify Admin</p>
-                <p className="text-muted-foreground text-sm">
-                  Desktop · Tablet workspace
-                </p>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground">
+                  B
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">Breadify Admin</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    Desktop · Tablet workspace
+                  </p>
+                </div>
               </div>
+              <ThemeToggle />
             </div>
-            <div className="bg-background border-border/80 rounded-[2rem] border shadow-xl">
+            <div className="rounded-[2rem] border border-border/80 bg-background shadow-xl">
               {children}
             </div>
           </div>
@@ -78,15 +82,15 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
   }
 
   return (
-    <div className="bg-muted/40 grid h-dvh grid-cols-1 overflow-hidden text-foreground md:grid-cols-[17rem_1fr]">
-      <aside className="bg-background border-border/80 hidden min-h-0 border-r md:flex md:flex-col">
+    <div className="grid h-dvh grid-cols-1 overflow-hidden bg-muted/40 text-foreground md:grid-cols-[17rem_1fr]">
+      <aside className="hidden min-h-0 border-r border-border/80 bg-background md:flex md:flex-col">
         <div className="flex h-[4.5rem] shrink-0 items-center gap-3 border-b px-5">
-          <span className="bg-primary text-primary-foreground flex size-11 items-center justify-center rounded-2xl text-sm font-semibold">
+          <span className="flex size-11 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground">
             B
           </span>
           <div className="min-w-0">
             <p className="truncate font-semibold">Breadify Admin</p>
-            <p className="text-muted-foreground truncate text-xs">
+            <p className="truncate text-xs text-muted-foreground">
               Quản lý cửa hàng
             </p>
           </div>
@@ -105,7 +109,7 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
                   isActive && "bg-primary/10 text-primary hover:text-primary"
                 )}
               >
@@ -120,14 +124,14 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
           <button
             type="button"
             onClick={logout}
-            className="text-destructive hover:bg-destructive/10 flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition-colors"
+            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
           >
             <IconLogout size={20} />
             <span>Đăng xuất</span>
           </button>
           <Link
             href="/"
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors"
+            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <IconHome size={20} />
             <span>Về web app</span>
@@ -136,35 +140,36 @@ function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
       </aside>
 
       <section className="flex min-h-0 flex-col">
-        <header className="bg-background/95 supports-backdrop-filter:bg-background/80 flex h-16 shrink-0 items-center justify-between border-b px-4 backdrop-blur md:h-[4.5rem] md:px-6">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80 md:h-[4.5rem] md:px-6">
           <div className="flex items-center gap-3 md:hidden">
-            <span className="bg-primary text-primary-foreground flex size-10 items-center justify-center rounded-xl text-sm font-semibold">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
               B
             </span>
             <div>
               <p className="text-sm font-semibold">Breadify Admin</p>
-              <p className="text-muted-foreground text-xs">Tablet workspace</p>
+              <p className="text-xs text-muted-foreground">Tablet workspace</p>
             </div>
           </div>
 
           <div className="hidden md:block">
-            <p className="text-muted-foreground text-xs uppercase tracking-wide">
+            <p className="text-xs tracking-wide text-muted-foreground uppercase">
               Admin workspace
             </p>
             <h1 className="text-lg font-semibold">Vận hành cửa hàng</h1>
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button
               type="button"
               onClick={logout}
-              className="border-border/80 bg-background text-destructive hover:bg-destructive/10 rounded-xl border px-3 py-2 text-sm font-medium"
+              className="rounded-xl border border-border/80 bg-background px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
             >
               Đăng xuất
             </button>
             <button
               type="button"
-              className="border-border/80 bg-background text-muted-foreground hover:text-foreground rounded-xl border p-2"
+              className="rounded-xl border border-border/80 bg-background p-2 text-muted-foreground hover:text-foreground"
               aria-label="Thông báo"
             >
               <IconBell size={20} />
