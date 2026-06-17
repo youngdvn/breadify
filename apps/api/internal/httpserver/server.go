@@ -36,6 +36,9 @@ func (server *Server) Routes() http.Handler {
 	mux.HandleFunc("POST /api/admin/auth/otp/verify", server.handleAdminVerifyOTP)
 	mux.HandleFunc("POST /api/admin/auth/logout", server.handleAdminLogout)
 	mux.HandleFunc("GET /api/admin/auth/me", server.handleAdminMe)
+	mux.HandleFunc("GET /api/admin/orders", server.handleAdminListOrders)
+	mux.HandleFunc("GET /api/admin/orders/{id}", server.handleAdminGetOrder)
+	mux.HandleFunc("PATCH /api/admin/orders/{id}/status", server.handleAdminUpdateOrderStatus)
 	return withCORS(mux)
 }
 
