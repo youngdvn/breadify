@@ -5,7 +5,7 @@ import Link from "next/link"
 import { IconGrid3x3, IconList } from "@tabler/icons-react"
 
 import { AddToCartButton } from "@/components/add-to-cart-button"
-import type { MenuItem } from "@/lib/api/menu"
+import type { MenuItem } from "@/types"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 

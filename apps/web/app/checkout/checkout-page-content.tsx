@@ -5,14 +5,12 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { apiFetch } from "@/lib/api/client"
-import type { Cart, Order } from "@/lib/api/types"
-import { formatVnd } from "@/lib/format"
+import { createOrder } from "@/services/order-client-service"
+import { addRecentOrderId } from "@/services/recent-orders-service"
+import type { Cart, FulfillmentType, PaymentMethod } from "@/types"
+import { formatVnd } from "@/utils/format"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-
-type FulfillmentType = "pickup" | "delivery"
-type PaymentMethod = "cash" | "vietqr"
 
 type CheckoutPageContentProps = {
   cart: Cart
@@ -73,23 +71,15 @@ function CheckoutPageContent({ cart, initialPayment }: CheckoutPageContentProps)
 
     setIsSubmitting(true)
     try {
-      const response = await apiFetch("/api/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          fulfillmentType,
-          paymentMethod,
-          customerName,
-          phone,
-          address,
-          note,
-        }),
+      const order = await createOrder({
+        fulfillmentType,
+        paymentMethod,
+        customerName,
+        phone,
+        address,
+        note,
       })
-
-      if (!response.ok) {
-        throw new Error("Cannot create order")
-      }
-
-      const order = (await response.json()) as Order
+      addRecentOrderId(order.id)
       toast.success("Đã tạo đơn hàng")
       router.push(`/checkout/success?orderId=${order.id}`)
       router.refresh()

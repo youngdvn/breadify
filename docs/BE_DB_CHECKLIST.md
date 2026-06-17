@@ -127,6 +127,9 @@ File này dùng để cập nhật tiến độ khi triển khai BE/DB. Mỗi ta
 - [x] Tách admin khỏi mobile storefront shell.
 - [x] Tạo admin shell riêng cho tablet/desktop.
 - [x] Tạo placeholder desktop pages cho admin orders/menu/QR.
+- [x] Refactor `apps/web` tách API calls vào `services/` và shared type vào `types/`.
+- [x] Thêm route chi tiết đơn hàng thật `/orders/[id]`.
+- [x] Lưu order vừa tạo vào lịch sử đơn local trên thiết bị.
 - [ ] Test login/logout trên browser.
 
 ## Phase 6 — Admin Menu

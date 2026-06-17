@@ -1,8 +1,8 @@
 import Link from "next/link"
 
 import { CartItemControls } from "@/app/cart/cart-item-controls"
-import { getCart } from "@/lib/api/cart"
-import { formatVnd } from "@/lib/format"
+import { getCart } from "@/services/cart-service"
+import { formatVnd } from "@/utils/format"
 import { Button } from "@workspace/ui/components/button"
 
 export const dynamic = "force-dynamic"

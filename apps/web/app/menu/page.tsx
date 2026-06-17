@@ -1,5 +1,5 @@
 import { MenuPageContent } from "@/app/menu/menu-page-content"
-import { getMenuItems } from "@/lib/api/menu"
+import { getMenuItems } from "@/services/menu-service"
 
 export const dynamic = "force-dynamic"
 

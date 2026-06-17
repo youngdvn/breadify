@@ -5,7 +5,10 @@ import type { FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { apiFetch } from "@/lib/api/client"
+import {
+  requestAdminOTP,
+  verifyAdminOTP,
+} from "@/services/admin-auth-service"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -21,16 +24,7 @@ function AdminLoginForm() {
     setIsSubmitting(true)
 
     try {
-      const response = await apiFetch("/api/admin/auth/otp/request", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Cannot request OTP")
-      }
+      await requestAdminOTP(username)
 
       toast.success("Đã gửi mã OTP", {
         description: "Vui lòng kiểm tra email của bạn và nhập mã OTP.",
@@ -48,17 +42,7 @@ function AdminLoginForm() {
     setIsSubmitting(true)
 
     try {
-      const response = await apiFetch("/api/admin/auth/otp/verify", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          otp,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Invalid OTP")
-      }
+      await verifyAdminOTP(username, otp)
 
       toast.success("Đăng nhập admin thành công")
       router.push("/admin")

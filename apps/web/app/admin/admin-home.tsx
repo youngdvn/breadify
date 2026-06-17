@@ -5,7 +5,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { apiFetch } from "@/lib/api/client"
+import {
+  getCurrentAdmin,
+  logoutAdmin,
+} from "@/services/admin-auth-service"
+import type { AdminUser } from "@/types"
 import { Button } from "@workspace/ui/components/button"
 import {
   IconClipboardList,
@@ -13,12 +17,6 @@ import {
   IconQrcode,
   IconToolsKitchen2,
 } from "@tabler/icons-react"
-
-type AdminUser = {
-  username: string
-  email: string
-  name: string
-}
 
 function AdminHome() {
   const router = useRouter()
@@ -29,17 +27,17 @@ function AdminHome() {
     let isMounted = true
 
     async function loadUser() {
-      const response = await apiFetch("/api/admin/auth/me")
+      const admin = await getCurrentAdmin()
       if (!isMounted) {
         return
       }
 
-      if (!response.ok) {
+      if (!admin) {
         router.replace("/admin/login")
         return
       }
 
-      setUser((await response.json()) as AdminUser)
+      setUser(admin)
       setIsLoading(false)
     }
 
@@ -55,9 +53,7 @@ function AdminHome() {
   }, [router])
 
   async function logout() {
-    await apiFetch("/api/admin/auth/logout", {
-      method: "POST",
-    })
+    await logoutAdmin()
     toast.success("Đã đăng xuất")
     router.replace("/admin/login")
   }

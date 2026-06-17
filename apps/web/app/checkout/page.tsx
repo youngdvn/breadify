@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { CheckoutPageContent } from "@/app/checkout/checkout-page-content"
-import { getCart } from "@/lib/api/cart"
+import { getCart } from "@/services/cart-service"
 import { Button } from "@workspace/ui/components/button"
 
 type CheckoutPageProps = {

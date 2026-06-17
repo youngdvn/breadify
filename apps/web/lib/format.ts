@@ -1,5 +1,1 @@
-function formatVnd(value: number) {
-  return new Intl.NumberFormat("vi-VN").format(value) + "đ"
-}
-
-export { formatVnd }
+export { formatVnd } from "@/utils/format"
